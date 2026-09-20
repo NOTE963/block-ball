@@ -2,143 +2,143 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>ブロックアリーナバトル</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>コアブレイカー - CORE BREAKER</title>
 <style>
   :root{
-    --bg:#0f1220; --bg2:#171b2e; --panel:#1c2138; --accent:#5ee1c9; --text:#f3f5fb; --muted:#9aa3c0;
-    box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+    --bg:#0b0e14;
+    --panel:#141924;
+    --panel2:#1c2333;
+    --accent:#5ee1c9;
+    --accent2:#ff5d7a;
+    --text:#e9edf5;
+    --sub:#8b94a8;
+    --brick-p1:#5ee1c9;
+    --brick-p2:#ff5d7a;
+    --ball:#ffe066;
   }
-  *{box-sizing:border-box;}
-  html,body{height:100%; margin:0;}
-  body{
-    background:linear-gradient(160deg,var(--bg),var(--bg2)); color:var(--text);
-    font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN",Meiryo,sans-serif;
-    display:flex; flex-direction:column; align-items:center; overflow:hidden;
-    touch-action:none; -webkit-user-select:none; user-select:none;
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:var(--bg); font-family:'Hiragino Sans','Yu Gothic',system-ui,sans-serif; color:var(--text);}
+  #app{position:fixed; inset:0; display:flex; align-items:center; justify-content:center; touch-action:none;}
+  #gameCanvas{display:block; background:#0d1220; touch-action:none;}
+
+  .screen{
+    position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    background:radial-gradient(circle at 50% 20%, #1a2136 0%, #0b0e14 70%);
+    padding:24px; gap:16px; text-align:center; z-index:20;
   }
-  #app{ width:100%; max-width:480px; height:100%; display:flex; flex-direction:column; padding:10px; }
-  header{ display:flex; align-items:center; justify-content:space-between; padding:4px 4px 8px; gap:6px; }
-  header h1{ font-size:16px; margin:0; font-weight:800;
-    background:linear-gradient(90deg,#5ee1c9,#ffb347); -webkit-background-clip:text; background-clip:text; color:transparent;}
-  .icon-btn{ background:var(--panel); border:1px solid rgba(255,255,255,.08); color:var(--text);
-    border-radius:10px; padding:6px 9px; font-size:12px; font-weight:600; cursor:pointer; }
-  #stage{ position:relative; flex:1; display:flex; flex-direction:column; background:var(--panel);
-    border-radius:18px; overflow:hidden; box-shadow:0 10px 30px rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.06); }
-  canvas{ display:block; width:100%; height:100%; touch-action:none; }
-  .hud{ position:absolute; top:6px; left:0; right:0; display:flex; justify-content:center; gap:8px;
-    flex-wrap:wrap; padding:0 8px; z-index:6; pointer-events:none; }
-  .plate{ background:rgba(10,12,24,.55); border-radius:8px; padding:3px 8px; font-size:11px; font-weight:700; display:flex; align-items:center; gap:5px;}
-  .dot{ width:8px; height:8px; border-radius:50%; }
-  .bar{ width:34px; height:5px; background:rgba(255,255,255,.15); border-radius:3px; overflow:hidden; }
-  .bar i{ display:block; height:100%; background:currentColor; }
-  #joywrap{ position:absolute; left:0; right:0; bottom:14px; display:flex; justify-content:center; z-index:8; }
-  #joybase{ width:104px; height:104px; border-radius:50%; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15); position:relative; touch-action:none; }
-  #joyknob{ width:44px; height:44px; border-radius:50%; background:rgba(94,225,201,.85); position:absolute; left:30px; top:30px; box-shadow:0 3px 10px rgba(0,0,0,.3); }
-  .overlay{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:12px; padding:22px; text-align:center; z-index:20; background:rgba(10,12,24,.75); backdrop-filter:blur(6px); }
-  .overlay.hidden{ display:none; }
-  .overlay h2{ margin:0; font-size:21px; }
-  .overlay p{ margin:0; color:var(--muted); font-size:13px; line-height:1.6; }
-  .btn{ appearance:none; border:none; cursor:pointer; font-weight:800; font-size:15px; padding:12px 20px;
-    border-radius:12px; color:#0b0e18; background:linear-gradient(90deg,#5ee1c9,#8ff0dd); width:100%; max-width:280px; }
-  .btn.secondary{ background:var(--panel); color:var(--text); border:1px solid rgba(255,255,255,.15); }
-  .btn.danger{ background:linear-gradient(90deg,#ff5d7a,#ffb347); }
-  .menu-list{ display:flex; flex-direction:column; gap:9px; width:100%; max-width:290px; }
-  .spinner{ width:32px; height:32px; border-radius:50%; border:3px solid rgba(255,255,255,.2); border-top-color:var(--accent); animation:spin 1s linear infinite;}
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-  .rank-tabs{ display:flex; gap:8px; margin-bottom:4px; }
-  .rank-tab{ flex:1; padding:7px; border-radius:10px; background:var(--bg); color:var(--muted); font-size:12px; font-weight:700; text-align:center; cursor:pointer; }
-  .rank-tab.active{ background:linear-gradient(90deg,#5ee1c9,#8ff0dd); color:#0b0e18; }
-  .rank-list{ width:100%; max-width:310px; max-height:48vh; overflow-y:auto; text-align:left; }
-  .rank-row{ display:flex; align-items:center; gap:9px; padding:8px 9px; border-radius:10px; margin-bottom:5px; background:var(--bg); font-size:12.5px; }
-  .rank-row .rk{ width:20px; text-align:center; font-weight:800; color:var(--muted); }
-  .rank-row .nm{ flex:1; font-weight:700; }
-  .rank-row .sc{ font-weight:800; color:var(--accent); }
-  footer{ padding:6px 2px 0; color:var(--muted); font-size:10.5px; text-align:center; }
-  .badge{ display:inline-block; padding:2px 8px; border-radius:20px; background:var(--bg); font-size:10.5px; color:var(--muted); margin-top:2px;}
-  input.nmInput{ width:100%; max-width:280px; padding:11px; border-radius:10px; border:1px solid rgba(255,255,255,.18);
-    background:var(--bg); color:var(--text); font-size:15px; text-align:center; }
-  .waitlist{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
-  .waitchip{ background:var(--bg); padding:5px 10px; border-radius:20px; font-size:12px; font-weight:700; }
+  .hidden{display:none !important;}
+
+  .logo{font-size:40px; font-weight:900; letter-spacing:2px; line-height:1.1;}
+  .logo span{color:var(--accent);}
+  .tagline{color:var(--sub); font-size:13px; margin-bottom:12px;}
+
+  .nameRow{display:flex; align-items:center; gap:8px; background:var(--panel); padding:10px 14px; border-radius:14px; width:min(320px,86vw);}
+  .nameRow input{flex:1; background:transparent; border:none; color:var(--text); font-size:15px; outline:none;}
+  .nameRow label{font-size:12px; color:var(--sub); white-space:nowrap;}
+
+  .menuBtn{
+    width:min(320px,86vw); padding:16px; border-radius:16px; border:none; font-size:17px; font-weight:700;
+    background:var(--panel2); color:var(--text); display:flex; flex-direction:column; gap:2px; cursor:pointer;
+  }
+  .menuBtn small{font-weight:400; color:var(--sub); font-size:12px;}
+  .menuBtn.primary{background:linear-gradient(135deg,var(--accent),#3ab8a0); color:#06120f;}
+  .menuBtn.primary small{color:#0a2b24;}
+  .menuBtn.versus{background:linear-gradient(135deg,var(--accent2),#c23854); color:#2a0510;}
+  .menuBtn.versus small{color:#3a0a16;}
+  .menuBtn:active{transform:scale(0.97);}
+
+  #rankBox{width:min(320px,86vw); background:var(--panel); border-radius:14px; padding:12px 14px; max-height:170px; overflow-y:auto;}
+  #rankBox h3{margin:0 0 8px; font-size:13px; color:var(--sub); font-weight:600; letter-spacing:1px;}
+  .rankRow{display:flex; justify-content:space-between; font-size:13px; padding:4px 0; border-bottom:1px solid #232a3b;}
+  .rankRow:last-child{border-bottom:none;}
+  .rankRow .rk{color:var(--accent); width:22px; font-weight:700;}
+  .rankRow .nm{flex:1; text-align:left; padding-left:6px; color:var(--text);}
+  .rankRow .sc{color:var(--sub);}
+
+  /* HUD */
+  #hud{position:fixed; inset:0; pointer-events:none; z-index:10;}
+  #topBar,#bottomInfo{position:absolute; left:0; right:0; display:flex; justify-content:center; padding:10px; gap:10px;}
+  #topBar{top:0;}
+  #timerBox{background:rgba(20,25,36,.75); backdrop-filter:blur(4px); padding:8px 16px; border-radius:12px; font-size:15px; font-weight:700; letter-spacing:1px;}
+  #statusMsg{position:absolute; top:46%; left:0; right:0; text-align:center; font-size:26px; font-weight:900; text-shadow:0 2px 8px #000;}
+
+  #joyWrap{position:absolute; left:24px; bottom:24px; width:130px; height:130px; pointer-events:auto;}
+  #joyBase{position:absolute; inset:0; border-radius:50%; background:rgba(255,255,255,.06); border:2px solid rgba(255,255,255,.15);}
+  #joyStick{position:absolute; width:56px; height:56px; border-radius:50%; background:rgba(94,225,201,.85); left:37px; top:37px; box-shadow:0 2px 10px rgba(0,0,0,.4);}
+
+  #exitBtn{position:absolute; right:16px; top:16px; pointer-events:auto; background:rgba(20,25,36,.75); border:none; color:var(--text); width:38px; height:38px; border-radius:10px; font-size:16px;}
+
+  #resultCard{position:fixed; inset:0; z-index:30; display:flex; align-items:center; justify-content:center; background:rgba(6,8,14,.82); flex-direction:column; gap:14px; padding:24px;}
+  #resultCard h2{font-size:28px; margin:0;}
+  #resultCard .scoreLine{font-size:16px; color:var(--sub);}
+  #saveMsg{font-size:12px; color:var(--accent); min-height:16px;}
+
+  .smallHint{font-size:11px; color:var(--sub); margin-top:-6px;}
 </style>
 </head>
 <body>
 <div id="app">
-  <header>
-    <h1>ブロックアリーナ</h1>
-    <div style="display:flex; gap:6px;">
-      <button class="icon-btn" id="btnName">👤 名前</button>
-      <button class="icon-btn" id="btnRank">🏆</button>
-    </div>
-  </header>
-
-  <div id="stage">
-    <canvas id="c"></canvas>
-    <div class="hud" id="hud" style="display:none;"></div>
-    <div id="joywrap" style="display:none;">
-      <div id="joybase"><div id="joyknob"></div></div>
-    </div>
-
-    <div class="overlay" id="ov-menu">
-      <h2>あそびかた を えらぶ</h2>
-      <p>ジョイスティックで自由に動くアリーナバトル。自分の後ろのブロック壁が「命」。ボールを打ち返して相手の壁を壊していこう。2〜4人でのランダムマッチに対応。</p>
-      <div class="menu-list">
-        <button class="btn" id="btnSurvival">🧊 サバイバル（ひとり）</button>
-        <button class="btn danger" id="btnMatch">⚔️ ランダムマッチ（2〜4人）</button>
-      </div>
-      <div class="badge" id="idBadge">Firebase 接続中…</div>
-    </div>
-
-    <div class="overlay hidden" id="ov-match">
-      <div class="spinner"></div>
-      <h2>対戦相手を探しています…</h2>
-      <p id="matchStatus">ロビーに接続中</p>
-      <div class="waitlist" id="waitList"></div>
-      <button class="btn secondary" id="btnBot">今すぐBotと練習する</button>
-      <button class="btn secondary" id="btnCancelMatch">キャンセル</button>
-    </div>
-
-    <div class="overlay hidden" id="ov-result">
-      <h2 id="resultTitle">GAME OVER</h2>
-      <p id="resultBody"></p>
-      <div class="menu-list">
-        <button class="btn" id="btnRetry">もう一度</button>
-        <button class="btn secondary" id="btnToMenu">メニューへ戻る</button>
-      </div>
-    </div>
-
-    <div class="overlay hidden" id="ov-rank">
-      <h2>🏆 ランキング</h2>
-      <div class="rank-tabs">
-        <div class="rank-tab active" data-tab="survival">サバイバル生存時間</div>
-        <div class="rank-tab" data-tab="battle">アリーナ 勝利数</div>
-      </div>
-      <div class="rank-list" id="rankList"><p style="color:var(--muted);">読み込み中…</p></div>
-      <button class="btn secondary" id="btnCloseRank">閉じる</button>
-    </div>
-
-    <div class="overlay hidden" id="ov-name">
-      <h2>👤 名前を設定</h2>
-      <input class="nmInput" id="nmInput" maxlength="10" placeholder="表示名（10文字まで）">
-      <div class="menu-list">
-        <button class="btn" id="btnSaveName">保存</button>
-        <button class="btn secondary" id="btnCloseName">キャンセル</button>
-      </div>
-    </div>
-  </div>
-
-  <footer id="foot">ジョイスティックで自由に動いてボールを弾こう</footer>
+  <canvas id="gameCanvas"></canvas>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import {
-  getFirestore, doc, setDoc, updateDoc, getDoc, deleteDoc, onSnapshot,
-  collection, query, where, orderBy, limit, getDocs, runTransaction, addDoc, writeBatch
-} from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+<!-- HUD (in-game) -->
+<div id="hud" class="hidden">
+  <div id="topBar"><div id="timerBox">00:00</div></div>
+  <div id="statusMsg" class="hidden"></div>
+  <div id="joyWrap">
+    <div id="joyBase"></div>
+    <div id="joyStick"></div>
+  </div>
+  <button id="exitBtn">✕</button>
+</div>
 
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+<!-- Title / Menu -->
+<div id="menuScreen" class="screen">
+  <div class="logo">CORE<br><span>BREAKER</span></div>
+  <div class="tagline">ボールを弾いて相手のコアを破壊せよ</div>
+
+  <div class="nameRow">
+    <label>名前</label>
+    <input id="nameInput" maxlength="10" placeholder="プレイヤー名">
+  </div>
+
+  <button class="menuBtn primary" id="btnSingle">
+    シングルモード（サバイバル）
+    <small>四方から来るボールを避けてコアを守れ</small>
+  </button>
+  <button class="menuBtn versus" id="btnVersus">
+    ランダムマッチ（オンライン対戦）
+    <small>相手を探して1対1のコア破壊バトル</small>
+  </button>
+
+  <div id="rankBox">
+    <h3>🏆 サバイバル ランキング TOP10</h3>
+    <div id="rankList">読み込み中...</div>
+  </div>
+</div>
+
+<!-- Matching screen -->
+<div id="matchScreen" class="screen hidden">
+  <div class="logo" style="font-size:26px;">対戦相手を探しています…</div>
+  <div class="tagline" id="matchStatus">マッチメイキング中</div>
+  <button class="menuBtn" id="cancelMatchBtn">キャンセル</button>
+</div>
+
+<!-- Result -->
+<div id="resultCard" class="hidden">
+  <h2 id="resultTitle">GAME OVER</h2>
+  <div class="scoreLine" id="resultScore"></div>
+  <div id="saveMsg"></div>
+  <button class="menuBtn primary" id="backToMenuBtn">メニューに戻る</button>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+<script>
+/* =========================================================
+   FIREBASE INIT
+   ========================================================= */
 const firebaseConfig = {
   apiKey: "AIzaSyASxo79YBtkxBWRFWzQtIoFdWw9iegkomI",
   authDomain: "haikyo-61102.firebaseapp.com",
@@ -148,644 +148,630 @@ const firebaseConfig = {
   appId: "1:193210205676:web:6977fc30bf4b9084a82cc9",
   measurementId: "G-ES8PVYT8MH"
 };
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const myUid = "u_" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
 
-let dbf = null, fbReady = false;
-try{
-  const app = initializeApp(firebaseConfig);
-  dbf = getFirestore(app);
-  fbReady = true;
-}catch(e){ console.error("Firebase init failed", e); fbReady = false; }
+/* =========================================================
+   GLOBAL / DOM
+   ========================================================= */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const menuScreen = document.getElementById('menuScreen');
+const matchScreen = document.getElementById('matchScreen');
+const resultCard = document.getElementById('resultCard');
+const hud = document.getElementById('hud');
+const timerBox = document.getElementById('timerBox');
+const statusMsg = document.getElementById('statusMsg');
+const nameInput = document.getElementById('nameInput');
+const rankList = document.getElementById('rankList');
+const matchStatus = document.getElementById('matchStatus');
 
-/* ---------------- identity ---------------- */
-let myId = localStorage.getItem("bba_id");
-if(!myId){ myId = "p_"+Math.random().toString(36).slice(2,10); localStorage.setItem("bba_id", myId); }
-let myName = localStorage.getItem("bba_name") || ("プレイヤー"+myId.slice(2,5));
+nameInput.value = localStorage.getItem('cb_name') || ('プレイヤー' + Math.floor(Math.random()*1000));
+nameInput.addEventListener('change', ()=> localStorage.setItem('cb_name', nameInput.value.trim() || nameInput.placeholder));
 
-document.getElementById("idBadge").textContent = fbReady ? "Firebase 接続中" : "Firebase 接続失敗（設定を確認してください）";
-
-/* ---------------- canvas / sizing ---------------- */
-const canvas = document.getElementById("c");
-const ctx = canvas.getContext("2d");
-const stage = document.getElementById("stage");
-const AR = 380; // arena logical size (square)
-let cssW=380, cssH=380, DPR=1, offX=0, offY=0, scale=1;
+// logical game space (portrait)
+const GW = 400, GH = 700;
+let scale = 1, offX = 0, offY = 0;
 
 function resize(){
-  const rect = stage.getBoundingClientRect();
-  DPR = Math.min(window.devicePixelRatio||1, 2);
-  cssW = rect.width; cssH = rect.height;
-  scale = Math.min(cssW, cssH) / AR;
-  offX = (cssW - AR*scale)/2; offY = (cssH - AR*scale)/2;
-  canvas.width = Math.round(cssW*DPR); canvas.height = Math.round(cssH*DPR);
-  canvas.style.width = cssW+"px"; canvas.style.height = cssH+"px";
-  ctx.setTransform(DPR,0,0,DPR,0,0);
+  const w = window.innerWidth, h = window.innerHeight;
+  scale = Math.min(w/GW, h/GH);
+  canvas.width = w * devicePixelRatio;
+  canvas.height = h * devicePixelRatio;
+  canvas.style.width = w+'px';
+  canvas.style.height = h+'px';
+  offX = (w - GW*scale)/2;
+  offY = (h - GH*scale)/2;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
 }
-window.addEventListener("resize", resize);
-setTimeout(resize,50); resize();
+window.addEventListener('resize', resize);
+resize();
 
-/* ---------------- joystick ---------------- */
-const joywrap = document.getElementById("joywrap");
-const joybase = document.getElementById("joybase");
-const joyknob = document.getElementById("joyknob");
-let joyActive=false, joyDX=0, joyDY=0, joyId=null;
-const JR = 30;
-function joySet(clientX,clientY){
-  const r = joybase.getBoundingClientRect();
-  const cx = r.left+r.width/2, cy=r.top+r.height/2;
-  let dx=clientX-cx, dy=clientY-cy;
-  const d=Math.hypot(dx,dy);
-  if(d>JR){ dx=dx/d*JR; dy=dy/d*JR; }
-  joyknob.style.left = (30+dx)+"px"; joyknob.style.top=(30+dy)+"px";
-  joyDX = dx/JR; joyDY = dy/JR;
+function toGameCoords(clientX, clientY){
+  return { x:(clientX - offX)/scale, y:(clientY - offY)/scale };
 }
-function joyReset(){ joyDX=0; joyDY=0; joyknob.style.left="30px"; joyknob.style.top="30px"; }
-joybase.addEventListener("pointerdown", e=>{ joyActive=true; joyId=e.pointerId; joybase.setPointerCapture(e.pointerId); joySet(e.clientX,e.clientY); });
-joybase.addEventListener("pointermove", e=>{ if(joyActive && e.pointerId===joyId) joySet(e.clientX,e.clientY); });
-function joyEnd(e){ if(e.pointerId===joyId){ joyActive=false; joyId=null; joyReset(); } }
-joybase.addEventListener("pointerup", joyEnd);
-joybase.addEventListener("pointercancel", joyEnd);
 
-/* also allow drag anywhere on canvas for survival mode paddle */
-let pointerX = AR/2;
-canvas.addEventListener("pointerdown", e=>{ const r=canvas.getBoundingClientRect(); pointerX=(e.clientX-r.left-offX)/scale; });
-canvas.addEventListener("pointermove", e=>{ if(e.buttons){ const r=canvas.getBoundingClientRect(); pointerX=(e.clientX-r.left-offX)/scale; } });
+/* =========================================================
+   JOYSTICK
+   ========================================================= */
+const joyWrap = document.getElementById('joyWrap');
+const joyBase = document.getElementById('joyBase');
+const joyStick = document.getElementById('joyStick');
+let joy = {active:false, nx:0, ny:0, id:null};
 
-/* ---------------- overlay / state helpers ---------------- */
-const OV = { menu:$("ov-menu"), match:$("ov-match"), result:$("ov-result"), rank:$("ov-rank"), name:$("ov-name") };
-function $(id){ return document.getElementById(id); }
-function showOverlay(name){ Object.values(OV).forEach(o=>o.classList.add("hidden")); if(name) OV[name].classList.remove("hidden"); }
-const hud = $("hud"), foot = $("foot");
-let mode="menu", rafId=null;
-function startLoop(step){ let last=performance.now(); cancelLoop();
-  function frame(now){ const dt=Math.min(40,now-last); last=now; step(dt); rafId=requestAnimationFrame(frame); }
-  rafId=requestAnimationFrame(frame);
+function joyCenter(){
+  const r = joyBase.getBoundingClientRect();
+  return {x:r.left+r.width/2, y:r.top+r.height/2, radius:r.width/2};
 }
-function cancelLoop(){ if(rafId){ cancelAnimationFrame(rafId); rafId=null; } }
-function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
-function ax(x){ return offX + x*scale; } function ay(y){ return offY + y*scale; } function asz(v){ return v*scale; }
+function joyStart(e){
+  const t = e.changedTouches ? e.changedTouches[0] : e;
+  joy.active = true; joy.id = t.identifier ?? 'mouse';
+  joyMove(e);
+}
+function joyMove(e){
+  if(!joy.active) return;
+  let t = e.changedTouches ? [...e.changedTouches].find(tt=>tt.identifier===joy.id) : e;
+  if(!t) return;
+  const c = joyCenter();
+  let dx = t.clientX - c.x, dy = t.clientY - c.y;
+  const dist = Math.min(Math.hypot(dx,dy), c.radius);
+  const ang = Math.atan2(dy,dx);
+  const kx = Math.cos(ang)*dist, ky = Math.sin(ang)*dist;
+  joyStick.style.left = (37+kx)+'px';
+  joyStick.style.top = (37+ky)+'px';
+  joy.nx = kx/c.radius; joy.ny = ky/c.radius;
+  e.preventDefault && e.preventDefault();
+}
+function joyEnd(e){
+  joy.active=false; joy.nx=0; joy.ny=0; joy.id=null;
+  joyStick.style.left='37px'; joyStick.style.top='37px';
+}
+joyWrap.addEventListener('touchstart', joyStart, {passive:false});
+joyWrap.addEventListener('touchmove', joyMove, {passive:false});
+joyWrap.addEventListener('touchend', joyEnd);
+joyWrap.addEventListener('touchcancel', joyEnd);
+joyWrap.addEventListener('mousedown', joyStart);
+window.addEventListener('mousemove', (e)=>{ if(joy.active) joyMove(e); });
+window.addEventListener('mouseup', joyEnd);
 
-/* ============================================================
-   SURVIVAL MODE (unchanged simple version)
-   ============================================================ */
-const Survival = (function(){
-  let paddle, balls, t0, elapsed, spawnTimer, spawnInterval, running;
-  function reset(){
-    paddle={w:64,h:12,x:AR/2-32,y:AR-34}; balls=[]; t0=performance.now(); elapsed=0; spawnTimer=0; spawnInterval=1300; running=true; pointerX=AR/2;
+/* =========================================================
+   GAME OBJECTS / CONSTANTS
+   ========================================================= */
+const PADDLE_W = 70, PADDLE_H = 14;
+const PADDLE_SPEED = 320; // px/sec at full joystick
+const BALL_R = 8;
+const CORE_SEGMENTS = 5;
+const CORE_SEG_W = 60, CORE_SEG_H = 18, CORE_GAP = 4;
+const CORE_TOTAL_W = CORE_SEGMENTS*CORE_SEG_W + (CORE_SEGMENTS-1)*CORE_GAP;
+
+function makeCore(){
+  const arr = [];
+  for(let i=0;i<CORE_SEGMENTS;i++) arr.push(true);
+  return arr;
+}
+function coreAlive(core){ return core.some(b=>b); }
+function coreHpCount(core){ return core.filter(b=>b).length; }
+
+/* Player paddle zone (own half). For single & versus: bottom player moves within lower half; core sits at very bottom.
+   Top (opponent / mirrored) similarly at top. */
+
+function newBall(x,y,vx,vy){ return {x,y,vx,vy,r:BALL_R}; }
+
+/* =========================================================
+   RENDER HELPERS
+   ========================================================= */
+function drawBackground(){
+  ctx.fillStyle = '#0d1220';
+  ctx.fillRect(0,0,GW,GH);
+  // center net line
+  ctx.strokeStyle = 'rgba(255,255,255,.06)';
+  ctx.setLineDash([6,10]);
+  ctx.beginPath(); ctx.moveTo(0,GH/2); ctx.lineTo(GW,GH/2); ctx.stroke();
+  ctx.setLineDash([]);
+}
+function drawPaddle(x,y,color){
+  ctx.fillStyle = color;
+  ctx.shadowColor = color; ctx.shadowBlur = 10;
+  roundRect(x-PADDLE_W/2, y-PADDLE_H/2, PADDLE_W, PADDLE_H, 7);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+function drawCore(centerX, y, core, color, flip){
+  const startX = centerX - CORE_TOTAL_W/2;
+  for(let i=0;i<core.length;i++){
+    const bx = startX + i*(CORE_SEG_W+CORE_GAP);
+    if(core[i]){
+      ctx.fillStyle = color;
+      roundRect(bx, y - CORE_SEG_H/2, CORE_SEG_W, CORE_SEG_H, 4);
+      ctx.fill();
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,.15)';
+      ctx.lineWidth=1.5;
+      roundRect(bx, y - CORE_SEG_H/2, CORE_SEG_W, CORE_SEG_H, 4);
+      ctx.stroke();
+    }
   }
-  function spawnBall(){
-    const edge=Math.floor(Math.random()*3); let x,y,vx,vy;
-    const speed=2.1+Math.random()*1.1+Math.min(elapsed/22,2.6);
-    if(edge===0){ x=20+Math.random()*(AR-40); y=-10; vx=(Math.random()-.5)*2.4; vy=speed; }
-    else if(edge===1){ x=-10; y=40+Math.random()*(AR*0.45); vx=speed; vy=(Math.random()*1.6+.6); }
-    else{ x=AR+10; y=40+Math.random()*(AR*0.45); vx=-speed; vy=(Math.random()*1.6+.6); }
-    balls.push({x,y,vx,vy,r:8,hue:150+Math.random()*160});
+}
+function drawBall(b){
+  ctx.fillStyle = 'var(--ball)';
+  ctx.fillStyle = '#ffe066';
+  ctx.shadowColor = '#ffe066'; ctx.shadowBlur = 14;
+  ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+
+function paddleCoreCollision(ball, coreCenterX, coreY, core, fromBelow){
+  // check collision with alive segments; fromBelow: ball moving up into core (core at top) etc — direction irrelevant, just AABB circle test
+  const startX = coreCenterX - CORE_TOTAL_W/2;
+  for(let i=0;i<core.length;i++){
+    if(!core[i]) continue;
+    const bx = startX + i*(CORE_SEG_W+CORE_GAP);
+    const by = coreY - CORE_SEG_H/2;
+    if(ball.x+ball.r > bx && ball.x-ball.r < bx+CORE_SEG_W && ball.y+ball.r > by && ball.y-ball.r < by+CORE_SEG_H){
+      core[i] = false;
+      ball.vy *= -1;
+      ball.vx += (Math.random()-0.5)*60;
+      return true;
+    }
   }
-  function update(dt){
-    if(!running) return;
-    elapsed=(performance.now()-t0)/1000;
-    spawnTimer+=dt; spawnInterval=Math.max(340,1300-elapsed*24);
-    if(spawnTimer>spawnInterval){ spawnTimer=0; spawnBall(); }
-    paddle.x += (pointerX-paddle.w/2-paddle.x)*0.28;
-    paddle.x = Math.max(0, Math.min(AR-paddle.w, paddle.x));
-    for(let i=balls.length-1;i>=0;i--){
-      const b=balls[i]; b.x+=b.vx; b.y+=b.vy;
-      if(b.x-b.r<0){ b.x=b.r; b.vx*=-1; } if(b.x+b.r>AR){ b.x=AR-b.r; b.vx*=-1; } if(b.y-b.r<0){ b.y=b.r; b.vy*=-1; }
-      if(b.vy>0 && b.y+b.r>=paddle.y && b.y+b.r<=paddle.y+paddle.h+14 && b.x>paddle.x-4 && b.x<paddle.x+paddle.w+4){
-        b.y=paddle.y-b.r; b.vy=-Math.abs(b.vy);
-        const hit=(b.x-(paddle.x+paddle.w/2))/(paddle.w/2); b.vx+=hit*1.6;
-        const sp=Math.hypot(b.vx,b.vy), cap=8; if(sp>cap){ b.vx*=cap/sp; b.vy*=cap/sp; }
+  return false;
+}
+
+function ballHitsPaddle(ball, px, py){
+  return ball.x+ball.r > px-PADDLE_W/2 && ball.x-ball.r < px+PADDLE_W/2 &&
+         ball.y+ball.r > py-PADDLE_H/2 && ball.y-ball.r < py+PADDLE_H/2;
+}
+function bounceOffPaddle(ball, px, speedMul){
+  const rel = (ball.x - px)/(PADDLE_W/2); // -1..1
+  const speed = Math.hypot(ball.vx,ball.vy) * (speedMul||1.03);
+  const ang = rel * (Math.PI/3); // max 60deg
+  const dirY = ball.vy > 0 ? -1 : 1;
+  ball.vx = Math.sin(ang)*speed;
+  ball.vy = Math.cos(ang)*speed*dirY;
+}
+
+/* =========================================================
+   STATE MACHINE
+   ========================================================= */
+let mode = null; // 'single' | 'versus'
+let rafId = null;
+let lastT = 0;
+
+/* ---------- SINGLE MODE ---------- */
+const single = {};
+function startSingle(){
+  mode='single';
+  single.paddleX = GW/2; single.paddleY = GH-70;
+  single.coreY = GH-24;
+  single.core = makeCore();
+  single.balls = [];
+  single.spawnTimer = 0;
+  single.spawnInterval = 1.6;
+  single.elapsed = 0;
+  single.over = false;
+  showGameUI();
+  lastT = performance.now();
+  loop();
+}
+function spawnSingleBall(){
+  const side = Math.floor(Math.random()*3); // 0 top,1 left,2 right
+  let x,y,vx,vy;
+  const speed = 130 + Math.random()*60 + Math.min(single.elapsed*2, 160);
+  if(side===0){ x = Math.random()*GW; y = -10; }
+  else if(side===1){ x = -10; y = Math.random()*GH*0.6; }
+  else { x = GW+10; y = Math.random()*GH*0.6; }
+  const tx = single.paddleX + (Math.random()-0.5)*120;
+  const ty = single.coreY;
+  const ang = Math.atan2(ty-y, tx-x);
+  vx = Math.cos(ang)*speed; vy = Math.sin(ang)*speed;
+  single.balls.push(newBall(x,y,vx,vy));
+}
+function updateSingle(dt){
+  single.elapsed += dt;
+  timerBox.textContent = fmtTime(single.elapsed);
+
+  single.paddleX += joy.nx * PADDLE_SPEED * dt;
+  single.paddleX = clamp(single.paddleX, PADDLE_W/2+4, GW-PADDLE_W/2-4);
+  single.paddleY += joy.ny * PADDLE_SPEED*0.5 * dt;
+  single.paddleY = clamp(single.paddleY, GH*0.45, GH-40);
+
+  single.spawnTimer += dt;
+  single.spawnInterval = Math.max(0.45, 1.6 - single.elapsed*0.02);
+  if(single.spawnTimer > single.spawnInterval){
+    single.spawnTimer = 0;
+    spawnSingleBall();
+  }
+
+  for(let i=single.balls.length-1;i>=0;i--){
+    const b = single.balls[i];
+    b.x += b.vx*dt; b.y += b.vy*dt;
+    if(b.x < b.r){ b.x=b.r; b.vx*=-1; }
+    if(b.x > GW-b.r){ b.x=GW-b.r; b.vx*=-1; }
+    if(b.y < -40){ single.balls.splice(i,1); continue; }
+
+    if(ballHitsPaddle(b, single.paddleX, single.paddleY) && b.vy>0){
+      bounceOffPaddle(b, single.paddleX, 1.04);
+      b.y = single.paddleY - PADDLE_H/2 - b.r;
+    }
+    if(b.y > single.coreY - CORE_SEG_H/2 - 30 && b.y < GH+30){
+      if(paddleCoreCollision(b, single.paddleX, single.coreY, single.core, true)){
+        // segment destroyed, ball bounced already inside function
       }
-      if(b.y-b.r>AR){ gameOver(); return; }
-    }
-  }
-  function draw(){
-    ctx.clearRect(0,0,cssW,cssH);
-    ctx.save(); ctx.translate(offX,offY); ctx.scale(scale,scale);
-    ctx.fillStyle="rgba(255,255,255,0.03)"; ctx.fillRect(0,0,AR,AR);
-    const grad=ctx.createLinearGradient(paddle.x,0,paddle.x+paddle.w,0);
-    grad.addColorStop(0,"#5ee1c9"); grad.addColorStop(1,"#8ff0dd");
-    ctx.fillStyle=grad; roundRect(paddle.x,paddle.y,paddle.w,paddle.h,6); ctx.fill();
-    balls.forEach(b=>{ ctx.beginPath(); ctx.fillStyle=`hsl(${b.hue},85%,65%)`; ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fill(); });
-    ctx.restore();
-  }
-  function gameOver(){ running=false; cancelLoop(); saveSurvivalScore(elapsed); showResult("survival",elapsed); }
-  function start(){
-    reset(); mode="survival"; hud.style.display="none"; joywrap.style.display="none";
-    foot.textContent="指で左右にドラッグしてパドルを操作。ボールを弾き続けて生き残ろう！";
-    showOverlay(null);
-    startLoop((dt)=>{ update(dt); draw(); if(running) drawSurvivalHud(); });
-  }
-  function drawSurvivalHud(){
-    ctx.save(); ctx.font="bold 15px sans-serif"; ctx.fillStyle="#fff"; ctx.textAlign="left";
-    ctx.fillText("TIME "+elapsed.toFixed(1)+"s", 10, 22); ctx.restore();
-  }
-  return { start };
-})();
-
-/* ============================================================
-   ARENA BATTLE MODE (joystick, blocks = life, Firebase realtime)
-   ============================================================ */
-const PALETTE = ["#5ee1c9","#ffb347","#ff5d7a","#8f9bff"];
-const NBLOCKS = 8;
-
-function slotsFor(n){
-  if(n<=2) return ["S","N"];
-  if(n===3) return ["S","N","E"];
-  return ["S","N","E","W"];
-}
-function zoneOf(slot){
-  const M=24, PW=40, BW=14;
-  if(slot==="S") return {kind:"h", px0:M, px1:AR-M, py0:AR-64, py1:AR-24, bx0:M, bx1:AR-M, by:AR-BW-4};
-  if(slot==="N") return {kind:"h", px0:M, px1:AR-M, py0:24, py1:64, bx0:M, bx1:AR-M, by:4};
-  if(slot==="E") return {kind:"v", py0:M, py1:AR-M, px0:AR-64, px1:AR-24, by0:M, by1:AR-M, bx:AR-BW-4};
-  return {kind:"v", py0:M, py1:AR-M, px0:24, px1:64, by0:M, by1:AR-M, bx:4};
-}
-function defaultPaddlePos(slot){
-  const z = zoneOf(slot);
-  if(z.kind==="h") return { x:(z.px0+z.px1)/2, y:(z.py0+z.py1)/2 };
-  return { x:(z.px0+z.px1)/2, y:(z.py0+z.py1)/2 };
-}
-function clampToZone(slot,x,y){
-  const z=zoneOf(slot);
-  return { x:Math.max(z.px0,Math.min(z.px1,x)), y:Math.max(z.py0,Math.min(z.py1,y)) };
-}
-function blockRect(slot, idx){
-  const z=zoneOf(slot);
-  if(z.kind==="h"){
-    const w=(z.bx1-z.bx0)/NBLOCKS;
-    return { x:z.bx0+idx*w+2, y:z.by, w:w-4, h:12 };
-  }else{
-    const h=(z.by1-z.by0)/NBLOCKS;
-    return { x:z.bx, y:z.by0+idx*h+2, w:12, h:h-4 };
-  }
-}
-
-const Arena = (function(){
-  let players=[]; // {id,name,slot,color,blocks:[bool],paddle:{x,y},alive}
-  let balls=[];
-  let status="playing", winnerId=null;
-  let matchId=null, isHost=false, mySlot=null;
-  let unsubMain=null, unsubInputs=null, netTimer=0, inputTimer=0, vsBots=false;
-  let remoteInputs={}; // id -> {x,y}
-  let localMyPaddle={x:AR/2,y:AR-44};
-
-  function initPlayersFrom(list){
-    const slots = slotsFor(list.length);
-    players = list.map((p,i)=>({
-      id:p.id, name:p.name, slot:slots[i], color:PALETTE[i%4],
-      blocks:new Array(NBLOCKS).fill(true), paddle:defaultPaddlePos(slots[i]), alive:true, isBot:!!p.bot
-    }));
-  }
-  function initBalls(){
-    const n = Math.max(1, players.length-1);
-    balls=[];
-    for(let i=0;i<n;i++){
-      const ang = Math.random()*Math.PI*2;
-      const sp = 3.4;
-      balls.push({x:AR/2+(Math.random()-.5)*30, y:AR/2+(Math.random()-.5)*30, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp});
+      if(b.y > GH+20){ single.balls.splice(i,1); }
     }
   }
 
-  function edgeNormal(slot){ return slot==="S"?{nx:0,ny:1}:slot==="N"?{nx:0,ny:-1}:slot==="E"?{nx:1,ny:0}:{nx:-1,ny:0}; }
-
-  function nearestBlockIdx(pl, coord){
-    let best=-1, bd=Infinity;
-    for(let i=0;i<pl.blocks.length;i++){
-      if(!pl.blocks[i]) continue;
-      const r = blockRect(pl.slot,i);
-      const c = zoneOf(pl.slot).kind==="h" ? (r.x+r.w/2) : (r.y+r.h/2);
-      const d = Math.abs(c-coord);
-      if(d<bd){ bd=d; best=i; }
-    }
-    return best;
+  if(!coreAlive(single.core) && !single.over){
+    endSingle();
   }
+}
+function drawSingle(){
+  drawBackground();
+  ctx.save();
+  ctx.translate(0,0);
+  drawCore(single.paddleX, single.coreY, single.core, '#5ee1c9');
+  drawPaddle(single.paddleX, single.paddleY, '#e9edf5');
+  single.balls.forEach(drawBall);
+  ctx.restore();
+}
+function endSingle(){
+  single.over = true;
+  cancelAnimationFrame(rafId);
+  const score = Math.floor(single.elapsed);
+  showResult('GAME OVER', `生存時間: ${fmtTime(single.elapsed)}`, ()=>{
+    saveScore(score);
+  });
+}
 
-  function checkWin(){
-    const aliveList = players.filter(p=>p.alive);
-    if(aliveList.length<=1 && players.length>1){
-      status="ended";
-      winnerId = aliveList.length===1 ? aliveList[0].id : null;
-    }
-  }
+/* ---------- VERSUS MODE (Firebase realtime) ---------- */
+const versus = {};
+let roomRef=null, myRole=null, roomId=null, unsubState=null, unsubPaddle=null;
 
-  function stepPhysics(){
-    // paddle targets
-    players.forEach(p=>{
-      let target;
-      if(p.id===myId) target = localMyPaddle;
-      else if(p.isBot) target = botTarget(p);
-      else target = remoteInputs[p.id] || p.paddle;
-      const t = clampToZone(p.slot, target.x, target.y);
-      p.paddle.x += (t.x-p.paddle.x)*0.35;
-      p.paddle.y += (t.y-p.paddle.y)*0.35;
-    });
+function cleanupVersus(){
+  if(unsubState){ unsubState(); unsubState=null; }
+  if(unsubPaddle){ unsubPaddle(); unsubPaddle=null; }
+  if(roomRef){ roomRef.off(); }
+  roomRef=null; roomId=null; myRole=null;
+}
 
-    balls.forEach(b=>{
-      b.x+=b.vx; b.y+=b.vy;
-      // outer bound fallback (in case no player on that edge)
-      if(b.x-7<0 && !hasPlayerOn("W")){ b.x=7; b.vx*=-1; }
-      if(b.x+7>AR && !hasPlayerOn("E")){ b.x=AR-7; b.vx*=-1; }
-      if(b.y-7<0 && !hasPlayerOn("N")){ b.y=7; b.vy*=-1; }
-      if(b.y+7>AR && !hasPlayerOn("S")){ b.y=AR-7; b.vy*=-1; }
-
-      players.forEach(p=>{
-        if(!p.alive) return;
-        const nrm = edgeNormal(p.slot);
-        // paddle collision (circle vs circle, paddle radius 17)
-        const dx=b.x-p.paddle.x, dy=b.y-p.paddle.y, dist=Math.hypot(dx,dy);
-        if(dist < 24){
-          const nx=dx/(dist||1), ny=dy/(dist||1);
-          const dot = b.vx*nx+b.vy*ny;
-          if(dot<0){
-            b.vx -= 2*dot*nx; b.vy -= 2*dot*ny;
-            b.vx += nx*0.6; b.vy += ny*0.6;
-            const push=24-dist; b.x+=nx*push; b.y+=ny*push;
-          }
-          return;
-        }
-        // block-band collision
-        const z = zoneOf(p.slot);
-        let inBand=false, coord=0;
-        if(p.slot==="S" && b.y+7>=z.by-2 && nrm.ny===1){ inBand = b.y+7>=z.by-2; coord=b.x; }
-        if(p.slot==="N" && b.y-7<=z.by+16){ inBand = b.y-7<=z.by+16; coord=b.x; }
-        if(p.slot==="E" && b.x+7>=z.bx-2){ inBand = b.x+7>=z.bx-2; coord=b.y; }
-        if(p.slot==="W" && b.x-7<=z.bx+16){ inBand = b.x-7<=z.bx+16; coord=b.y; }
-        const movingToward = (p.slot==="S"&&b.vy>0)||(p.slot==="N"&&b.vy<0)||(p.slot==="E"&&b.vx>0)||(p.slot==="W"&&b.vx<0);
-        if(inBand && movingToward){
-          const idx = nearestBlockIdx(p, coord);
-          if(idx>=0){
-            p.blocks[idx]=false;
-            if(p.slot==="S"||p.slot==="N") b.vy*=-1; else b.vx*=-1;
-            const alive = p.blocks.some(x=>x);
-            if(!alive){ p.alive=false; }
-          } else {
-            // no blocks left on this edge: reflect off wall anyway
-            if(p.slot==="S"||p.slot==="N") b.vy*=-1; else b.vx*=-1;
-          }
-        }
-      });
-
-      const sp=Math.hypot(b.vx,b.vy), minSp=3.4, maxSp=8.2;
-      if(sp<minSp){ const k=minSp/sp; b.vx*=k; b.vy*=k; }
-      if(sp>maxSp){ const k=maxSp/sp; b.vx*=k; b.vy*=k; }
-    });
-    checkWin();
-  }
-
-  function hasPlayerOn(slot){ return players.some(p=>p.slot===slot && p.alive); }
-
-  function botTarget(p){
-    // simple AI: chase nearest ball within own zone
-    let nearest=null, bd=Infinity;
-    balls.forEach(b=>{ const d=Math.hypot(b.x-p.paddle.x,b.y-p.paddle.y); if(d<bd){bd=d; nearest=b;} });
-    if(!nearest) return p.paddle;
-    return { x:nearest.x, y:nearest.y };
-  }
-
-  function draw(){
-    ctx.clearRect(0,0,cssW,cssH);
-    ctx.save(); ctx.translate(offX,offY); ctx.scale(scale,scale);
-    ctx.fillStyle="rgba(255,255,255,0.03)"; ctx.fillRect(0,0,AR,AR);
-    ctx.strokeStyle="rgba(255,255,255,0.08)"; ctx.strokeRect(1,1,AR-2,AR-2);
-
-    players.forEach(p=>{
-      ctx.globalAlpha = p.alive?1:0.15;
-      for(let i=0;i<p.blocks.length;i++){
-        if(!p.blocks[i]) continue;
-        const r=blockRect(p.slot,i);
-        ctx.fillStyle=p.color; roundRect(r.x,r.y,r.w,r.h,3); ctx.fill();
-      }
-      ctx.globalAlpha=1;
-    });
-
-    players.forEach(p=>{
-      if(!p.alive) return;
-      ctx.beginPath(); ctx.fillStyle=p.color; ctx.arc(p.paddle.x,p.paddle.y,15,0,Math.PI*2); ctx.fill();
-      ctx.fillStyle="#0b0e18"; ctx.font="bold 12px sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
-      ctx.fillText((p.name||"?").slice(0,1), p.paddle.x, p.paddle.y+1);
-    });
-
-    balls.forEach(b=>{ ctx.beginPath(); ctx.fillStyle="#ffffff"; ctx.arc(b.x,b.y,7,0,Math.PI*2); ctx.fill(); });
-    ctx.restore();
-  }
-
-  function renderHud(){
-    hud.innerHTML="";
-    players.forEach(p=>{
-      const alive = p.blocks.filter(x=>x).length;
-      const div=document.createElement("div"); div.className="plate";
-      div.innerHTML = `<span class="dot" style="background:${p.color}"></span>${(p.name||"?").slice(0,6)}${p.id===myId?"(自分)":""}<span class="bar" style="color:${p.color}"><i style="width:${alive/NBLOCKS*100}%"></i></span>`;
-      hud.appendChild(div);
-    });
-  }
-
-  function endBattle(){
-    cancelLoop(); cleanupNet();
-    const iWon = winnerId===myId;
-    saveBattleResult(iWon);
-    showResult("battle", null, iWon);
-  }
-
-  function pushHostState(){
-    if(!dbf || !matchId || vsBots) return;
-    const paddles={}; players.forEach(p=>{ paddles[p.id]={x:p.paddle.x,y:p.paddle.y}; });
-    const blocks={}; players.forEach(p=>{ blocks[p.id]=p.blocks; });
-    const alive={}; players.forEach(p=>{ alive[p.id]=p.alive; });
-    setDoc(doc(dbf,"matches",matchId), {
-      balls: balls.map(b=>({x:b.x,y:b.y,vx:b.vx,vy:b.vy})),
-      paddles, blocks, alive, status, winnerId, updatedAt: Date.now()
-    }).catch(()=>{});
-  }
-  function sendMyInput(){
-    if(!dbf || !matchId || vsBots) return;
-    setDoc(doc(dbf,"matches",matchId,"inputs",myId), {x:localMyPaddle.x,y:localMyPaddle.y,t:Date.now()}).catch(()=>{});
-  }
-  function cleanupNet(){
-    if(unsubMain){ unsubMain(); unsubMain=null; }
-    if(unsubInputs){ unsubInputs(); unsubInputs=null; }
-  }
-  function attachHostListeners(){
-    unsubInputs = onSnapshot(collection(dbf,"matches",matchId,"inputs"), snap=>{
-      snap.docChanges().forEach(ch=>{
-        const d=ch.doc.data(); remoteInputs[ch.doc.id] = {x:d.x,y:d.y};
-      });
-    }, ()=>{});
-  }
-  function attachGuestListeners(){
-    unsubMain = onSnapshot(doc(dbf,"matches",matchId), snap=>{
-      const d=snap.data(); if(!d) return;
-      if(d.balls) balls = d.balls.map(b=>({...b}));
-      players.forEach(p=>{
-        if(d.paddles && d.paddles[p.id] && p.id!==myId) p.paddle = {...d.paddles[p.id]};
-        if(d.blocks && d.blocks[p.id]) p.blocks = d.blocks[p.id];
-        if(d.alive) p.alive = d.alive[p.id];
-      });
-      status = d.status || status; winnerId = d.winnerId || winnerId;
-    }, ()=>{});
-  }
-
-  function begin({list, matchIdIn, hostFlag, vsBotsFlag}){
-    matchId = matchIdIn; isHost = hostFlag; vsBots = !!vsBotsFlag;
-    mySlot = null;
-    initPlayersFrom(list);
-    const me = players.find(p=>p.id===myId);
-    mySlot = me ? me.slot : "S";
-    localMyPaddle = { ...defaultPaddlePos(mySlot) };
-    remoteInputs = {};
-    if(isHost){ initBalls(); }
-    else { balls=[]; }
-    status="playing"; winnerId=null;
-
-    if(dbf && !vsBots){
-      if(isHost) attachHostListeners(); else attachGuestListeners();
-    }
-
-    mode="battle"; hud.style.display="flex"; joywrap.style.display="flex";
-    foot.textContent = "ジョイスティックで移動してボールを弾こう。相手のブロックを先に全部壊せば勝ち！";
-    showOverlay(null);
-
-    startLoop((dt)=>{
-      localMyPaddle.x += joyDX*4.2; localMyPaddle.y += joyDY*4.2;
-      const c = clampToZone(mySlot, localMyPaddle.x, localMyPaddle.y);
-      localMyPaddle = c;
-      const mp = players.find(p=>p.id===myId);
-      if(mp) mp.paddle = { x: mp.paddle.x+(c.x-mp.paddle.x)*0.5, y: mp.paddle.y+(c.y-mp.paddle.y)*0.5 };
-
-      if(isHost || vsBots){
-        stepPhysics();
-        netTimer+=dt;
-        if(dbf && !vsBots && netTimer>110){ netTimer=0; pushHostState(); }
-      } else {
-        inputTimer+=dt;
-        if(dbf && inputTimer>90){ inputTimer=0; sendMyInput(); }
-      }
-      draw(); renderHud();
-      if(status==="ended"){ endBattle(); }
-    });
-  }
-
-  return { begin, cleanupNet: ()=>cleanupNet() };
-})();
-
-/* ---------------- Matchmaking (Firestore) ---------------- */
-let lobbyId=null, unsubLobby=null, mmActive=false, mmCheckTimer=null;
-
+let matchCancelled = false;
 async function startMatchmaking(){
-  mode="matching"; showOverlay("match");
-  $("matchStatus").textContent = fbReady ? "ロビーを探しています…" : "Firebaseに接続できないため、Botと練習してください";
-  $("waitList").innerHTML="";
-  if(!fbReady){ return; }
-  mmActive = true;
-  try{
-    const q = query(collection(dbf,"lobbies"), where("status","==","waiting"), orderBy("createdAt","asc"), limit(6));
-    const snaps = await getDocs(q);
-    let joined=null;
-    for(const s of snaps.docs){
-      try{
-        const ref = doc(dbf,"lobbies",s.id);
-        const res = await runTransaction(dbf, async (tx)=>{
-          const cur = await tx.get(ref);
-          if(!cur.exists()) throw new Error("gone");
-          const data = cur.data();
-          if(data.status!=="waiting") throw new Error("not-waiting");
-          if(data.players.some(p=>p.id===myId)) return {id:s.id,...data};
-          if(data.players.length>=data.maxPlayers) throw new Error("full");
-          const players=[...data.players, {id:myId,name:myName}];
-          const upd = { players };
-          if(players.length>=data.minPlayers && !data.readyAt) upd.readyAt = Date.now();
-          tx.update(ref, upd);
-          return { id:s.id, ...data, ...upd };
-        });
-        joined = res; break;
-      }catch(e){ continue; }
-    }
-    if(!joined){
-      const ref = await addDoc(collection(dbf,"lobbies"), {
-        status:"waiting", players:[{id:myId,name:myName}], maxPlayers:4, minPlayers:2,
-        createdAt: Date.now(), readyAt:null, matchId:null
-      });
-      joined = { id: ref.id, players:[{id:myId,name:myName}], maxPlayers:4, minPlayers:2, createdAt:Date.now(), readyAt:null, matchId:null };
-    }
-    lobbyId = joined.id;
-    watchLobby();
-  }catch(e){
-    $("matchStatus").textContent = "接続エラーが発生しました。Botと練習できます。";
-  }
-}
+  matchCancelled = false;
+  matchScreen.classList.remove('hidden');
+  matchStatus.textContent = '対戦相手を探しています…';
 
-function watchLobby(){
-  if(!lobbyId) return;
-  const ref = doc(dbf,"lobbies",lobbyId);
-  unsubLobby = onSnapshot(ref, async snap=>{
-    if(!snap.exists() || !mmActive) return;
-    const d = snap.data();
-    $("matchStatus").textContent = `待機中… (${d.players.length}/${d.maxPlayers}人)`;
-    $("waitList").innerHTML = d.players.map(p=>`<div class="waitchip">${escapeHtml(p.name)}</div>`).join("");
+  const waitingRef = db.ref('lobby/waiting');
+  const myName = (nameInput.value||'名無し').trim();
 
-    if(d.matchId){
-      mmActive=false; if(unsubLobby){ unsubLobby(); unsubLobby=null; }
-      const isHost = d.players[0].id===myId;
-      Arena.begin({ list:d.players, matchIdIn:d.matchId, hostFlag:isHost, vsBotsFlag:false });
-      return;
+  const res = await waitingRef.transaction(cur=>{
+    if(cur===null || (Date.now()-(cur.ts||0) > 15000)){
+      return {uid:myUid, name:myName, ts:Date.now()};
     }
-    const readyEnough = d.players.length>=d.minPlayers;
-    const timeUp = d.readyAt && (Date.now()-d.readyAt>=8000);
-    const full = d.players.length>=d.maxPlayers;
-    if(readyEnough && (timeUp||full) && d.players[0].id===myId){
-      try{
-        const claimed = await runTransaction(dbf, async (tx)=>{
-          const cur = await tx.get(ref);
-          const cd = cur.data();
-          if(cd.matchId) return false;
-          tx.update(ref, { status:"starting" });
-          return true;
-        });
-        if(claimed){
-          const matchRef = doc(collection(dbf,"matches"));
-          const list = d.players;
-          const slots = slotsFor(list.length);
-          const paddles={}, blocks={}, alive={};
-          list.forEach((p,i)=>{ paddles[p.id]=defaultPaddlePos(slots[i]); blocks[p.id]=new Array(NBLOCKS).fill(true); alive[p.id]=true; });
-          const nBalls = Math.max(1, list.length-1);
-          const ballsArr=[];
-          for(let i=0;i<nBalls;i++){ const ang=Math.random()*Math.PI*2; ballsArr.push({x:AR/2,y:AR/2,vx:Math.cos(ang)*3.4,vy:Math.sin(ang)*3.4}); }
-          const batch = writeBatch(dbf);
-          batch.set(matchRef, { balls:ballsArr, paddles, blocks, alive, status:"playing", winnerId:null, updatedAt:Date.now() });
-          batch.update(ref, { status:"playing", matchId: matchRef.id });
-          await batch.commit();
-        }
-      }catch(e){ /* someone else may have claimed; snapshot will update */ }
-    }
-  }, ()=>{});
-}
+    return cur; // leave as is, someone already waiting
+  });
 
-function escapeHtml(s){ return (s||"").replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+  if(matchCancelled) return;
 
-function cancelMatchmaking(){
-  mmActive=false;
-  if(unsubLobby){ unsubLobby(); unsubLobby=null; }
-  if(lobbyId && dbf){
-    const ref=doc(dbf,"lobbies",lobbyId);
-    getDoc(ref).then(s=>{
-      if(s.exists()){
-        const d=s.data();
-        if(!d.matchId){
-          const remain = d.players.filter(p=>p.id!==myId);
-          if(remain.length===0) deleteDoc(ref).catch(()=>{});
-          else updateDoc(ref,{players:remain}).catch(()=>{});
-        }
+  if(res.committed && res.snapshot.val() && res.snapshot.val().uid===myUid){
+    // I'm the host, wait for assignment
+    myRole = 'host';
+    matchStatus.textContent = '相手を待っています…';
+    const assignRef = db.ref('lobby/hostAssignments/'+myUid);
+    const cb = assignRef.on('value', snap=>{
+      const val = snap.val();
+      if(val && val.roomId){
+        assignRef.off('value', cb);
+        assignRef.remove();
+        waitingRef.transaction(cur=> (cur && cur.uid===myUid) ? null : cur);
+        enterRoom(val.roomId, 'host', val.guestName || '対戦相手');
       }
-    }).catch(()=>{});
-  }
-  lobbyId=null;
-  showOverlay("menu"); mode="menu"; hud.style.display="none"; joywrap.style.display="none";
-}
-
-function startVsBots(){
-  mmActive=false;
-  if(unsubLobby){ unsubLobby(); unsubLobby=null; }
-  const n = 2 + Math.floor(Math.random()*2); // 2-3 bots total incl. self => up to 3-4 players... keep simple: self+2 bots
-  const list = [{id:myId,name:myName}];
-  for(let i=0;i<2;i++) list.push({id:"bot"+i, name:["CPU-α","CPU-β","CPU-γ"][i], bot:true});
-  Arena.begin({ list, matchIdIn:null, hostFlag:true, vsBotsFlag:true });
-}
-
-/* ---------------- Result / scores ---------------- */
-function showResult(kind, elapsed, iWon){
-  hud.style.display="none"; joywrap.style.display="none";
-  if(kind==="survival"){
-    $("resultTitle").textContent="🧊 サバイバル終了";
-    $("resultBody").textContent=`生存時間: ${elapsed.toFixed(1)} 秒`;
-  } else {
-    $("resultTitle").textContent = iWon ? "🎉 勝利！" : "😵 敗北…";
-    $("resultBody").textContent = iWon ? "相手のブロックを全て破壊しました！" : "自分のブロックが全て壊されました…";
-  }
-  showOverlay("result"); window.__lastMode = kind;
-}
-
-function saveSurvivalScore(elapsed){
-  const key="bba_best_survival";
-  const prev=parseFloat(localStorage.getItem(key)||"0");
-  if(elapsed>prev) localStorage.setItem(key, elapsed.toFixed(2));
-  if(dbf){
-    getDoc(doc(dbf,"ranking_survival",myId)).then(snap=>{
-      const cur = snap.exists() ? (snap.data().bestTime||0) : 0;
-      if(elapsed>cur) setDoc(doc(dbf,"ranking_survival",myId), {id:myId,name:myName,bestTime:elapsed,updatedAt:Date.now()}).catch(()=>{});
-    }).catch(()=>{});
-  }
-}
-function saveBattleResult(iWon){
-  if(!iWon) return;
-  const key="bba_wins_local";
-  localStorage.setItem(key, (parseInt(localStorage.getItem(key)||"0")+1).toString());
-  if(dbf){
-    getDoc(doc(dbf,"ranking_battle",myId)).then(snap=>{
-      const cur = snap.exists() ? (snap.data().wins||0) : 0;
-      setDoc(doc(dbf,"ranking_battle",myId), {id:myId,name:myName,wins:cur+1,updatedAt:Date.now()}).catch(()=>{});
-    }).catch(()=>{});
-  }
-}
-
-/* ---------------- Ranking UI ---------------- */
-let rankTab="survival";
-async function loadRanking(){
-  const list=$("rankList");
-  if(!dbf){
-    const t = localStorage.getItem(rankTab==="survival"?"bba_best_survival":"bba_wins_local");
-    list.innerHTML = `<p style="color:var(--muted);font-size:13px;">Firebaseに接続できません。<br>あなたの記録（この端末）: <b>${t? (rankTab==="survival"? parseFloat(t).toFixed(1)+"秒":t+"勝") : "まだありません"}</b></p>`;
-    return;
-  }
-  list.innerHTML=`<p style="color:var(--muted);">読み込み中…</p>`;
-  try{
-    const col = rankTab==="survival" ? "ranking_survival" : "ranking_battle";
-    const field = rankTab==="survival" ? "bestTime" : "wins";
-    const q = query(collection(dbf,col), orderBy(field,"desc"), limit(20));
-    const snap = await getDocs(q);
-    if(snap.empty){ list.innerHTML=`<p style="color:var(--muted);">まだ記録がありません。最初の記録を作ろう！</p>`; return; }
-    list.innerHTML="";
-    let i=0;
-    snap.forEach(d=>{
-      i++; const data=d.data();
-      const row=document.createElement("div"); row.className="rank-row";
-      row.innerHTML = `<div class="rk">${i}</div><div class="nm"></div><div class="sc">${rankTab==="survival"?data.bestTime.toFixed(1)+"秒":(data.wins||0)+"勝"}</div>`;
-      row.querySelector(".nm").textContent = data.name || "プレイヤー";
-      list.appendChild(row);
     });
-  }catch(e){ list.innerHTML=`<p style="color:var(--muted);">ランキングを読み込めませんでした（Firestoreのルール設定をご確認ください）。</p>`; }
+    // allow cancel
+    startMatchmaking._cancelHostListener = ()=> assignRef.off('value', cb);
+  } else {
+    // someone else waiting -> become guest
+    const waitingVal = res.snapshot.val();
+    if(!waitingVal || !waitingVal.uid || waitingVal.uid===myUid){
+      // race condition fallback: retry
+      return startMatchmaking();
+    }
+    myRole = 'guest';
+    const newRoomRef = db.ref('rooms').push();
+    roomId = newRoomRef.key;
+    const initState = initialRoomState();
+    await newRoomRef.set({
+      hostId: waitingVal.uid, hostName: waitingVal.name||'ホスト',
+      guestId: myUid, guestName: myName,
+      state: initState,
+      createdAt: Date.now()
+    });
+    await db.ref('lobby/hostAssignments/'+waitingVal.uid).set({roomId, guestName:myName});
+    enterRoom(roomId, 'guest', waitingVal.name||'対戦相手');
+  }
+}
+function cancelMatchmaking(){
+  matchCancelled = true;
+  if(startMatchmaking._cancelHostListener) startMatchmaking._cancelHostListener();
+  db.ref('lobby/waiting').transaction(cur=> (cur && cur.uid===myUid) ? null : cur);
+  matchScreen.classList.add('hidden');
+}
+document.getElementById('cancelMatchBtn').addEventListener('click', cancelMatchmaking);
+
+function initialRoomState(){
+  return {
+    ball: {x:GW/2, y:GH/2, vx: (Math.random()<0.5?-1:1)*140, vy:(Math.random()<0.5?-1:1)*160},
+    hostPaddleX: GW/2, hostPaddleY: GH-70,
+    guestPaddleX: GW/2, guestPaddleY: GH-70,
+    hostCore: makeCore(), guestCore: makeCore(),
+    status:'playing', winner:null, updatedAt: Date.now()
+  };
 }
 
-/* ---------------- name ---------------- */
-$("btnName").onclick=()=>{ $("nmInput").value=myName; showOverlay("name"); };
-$("btnCloseName").onclick=()=>{ showOverlay("menu"); };
-$("btnSaveName").onclick=()=>{
-  const v = ($("nmInput").value||"").trim();
-  if(v){ myName=v.slice(0,10); localStorage.setItem("bba_name",myName); }
-  showOverlay("menu");
-};
+function enterRoom(rid, role, opponentName){
+  roomId = rid; myRole = role;
+  matchScreen.classList.add('hidden');
+  roomRef = db.ref('rooms/'+roomId);
+  if(role==='host'){
+    roomRef.onDisconnect().update({status:'opponent_left'});
+  } else {
+    roomRef.child('guestId').onDisconnect().set(null);
+    roomRef.onDisconnect().update({status:'opponent_left'});
+  }
+  versus.opponentName = opponentName;
+  versus.myPaddleX = GW/2; versus.myPaddleY = GH-70;
+  versus.localState = null;
+  versus.over = false;
+  versus.startedAt = Date.now();
 
-/* ---------------- wiring ---------------- */
-$("btnSurvival").onclick=()=>{ Survival.start(); };
-$("btnMatch").onclick=()=>{ startMatchmaking(); };
-$("btnCancelMatch").onclick=()=>{ cancelMatchmaking(); };
-$("btnBot").onclick=()=>{ cancelMatchmakingSilent(); startVsBots(); };
-function cancelMatchmakingSilent(){
-  mmActive=false; if(unsubLobby){ unsubLobby(); unsubLobby=null; }
-  if(lobbyId && dbf){ const ref=doc(dbf,"lobbies",lobbyId); getDoc(ref).then(s=>{ if(s.exists()){ const d=s.data(); if(!d.matchId){ const remain=d.players.filter(p=>p.id!==myId); if(remain.length===0) deleteDoc(ref).catch(()=>{}); else updateDoc(ref,{players:remain}).catch(()=>{}); } } }).catch(()=>{}); }
-  lobbyId=null;
+  // listen to full state (used for rendering by both; host is authoritative writer)
+  roomRef.child('state').on('value', snap=>{
+    versus.remoteState = snap.val();
+    if(versus.remoteState && versus.remoteState.status && versus.remoteState.status!=='playing' && !versus.over){
+      finishVersus(versus.remoteState.status, versus.remoteState.winner);
+    }
+  });
+
+  mode='versus';
+  showGameUI();
+  lastT = performance.now();
+  versus.lastPush = 0;
+  loop();
 }
-$("btnRank").onclick=()=>{ showOverlay("rank"); loadRanking(); };
-$("btnCloseRank").onclick=()=>{ showOverlay("menu"); };
-$("btnToMenu").onclick=()=>{ backToMenu(); };
-$("btnRetry").onclick=()=>{ if(window.__lastMode==="survival") Survival.start(); else startMatchmaking(); };
-document.querySelectorAll(".rank-tab").forEach(el=>{
-  el.onclick=()=>{ document.querySelectorAll(".rank-tab").forEach(x=>x.classList.remove("active")); el.classList.add("active"); rankTab=el.dataset.tab; loadRanking(); };
+
+function updateVersusLocal(dt){
+  // move my own paddle locally always (both host & guest control paddle client-side)
+  versus.myPaddleX += joy.nx * PADDLE_SPEED * dt;
+  versus.myPaddleX = clamp(versus.myPaddleX, PADDLE_W/2+4, GW-PADDLE_W/2-4);
+  versus.myPaddleY += joy.ny * PADDLE_SPEED*0.5 * dt;
+  if(myRole==='host'){
+    versus.myPaddleY = clamp(versus.myPaddleY, GH*0.55, GH-40);
+  } else {
+    versus.myPaddleY = clamp(versus.myPaddleY, 40, GH*0.45);
+  }
+
+  versus.lastPush += dt;
+  if(versus.lastPush > 0.07 && roomRef){
+    versus.lastPush = 0;
+    const field = myRole==='host' ? {hostPaddleX:versus.myPaddleX, hostPaddleY:versus.myPaddleY}
+                                   : {guestPaddleX:versus.myPaddleX, guestPaddleY:versus.myPaddleY};
+    roomRef.child('state').update(field);
+  }
+
+  if(myRole==='host'){
+    hostSimulate(dt);
+  }
+}
+
+function hostSimulate(dt){
+  const st = versus.remoteState;
+  if(!st || st.status!=='playing') return;
+  let ball = st.ball || initialRoomState().ball;
+  const hostCore = st.hostCore || makeCore();
+  const guestCore = st.guestCore || makeCore();
+  const hostPX = versus.myPaddleX, hostPY = versus.myPaddleY;
+  const guestPX = st.guestPaddleX ?? GW/2, guestPY = st.guestPaddleY ?? 70;
+
+  ball.x += ball.vx*dt; ball.y += ball.vy*dt;
+  if(ball.x < BALL_R){ ball.x=BALL_R; ball.vx*=-1; }
+  if(ball.x > GW-BALL_R){ ball.x=GW-BALL_R; ball.vx*=-1; }
+
+  const ballObj = {x:ball.x,y:ball.y,vx:ball.vx,vy:ball.vy,r:BALL_R};
+
+  if(ballHitsPaddle(ballObj, hostPX, hostPY) && ballObj.vy>0){
+    bounceOffPaddle(ballObj, hostPX, 1.03);
+    ballObj.y = hostPY - PADDLE_H/2 - ballObj.r;
+  } else if(ballHitsPaddle(ballObj, guestPX, guestPY) && ballObj.vy<0){
+    bounceOffPaddle(ballObj, guestPX, 1.03);
+    ballObj.y = guestPY + PADDLE_H/2 + ballObj.r;
+  }
+
+  let winner = null, status='playing';
+  if(ballObj.y > GH - 40){
+    paddleCoreCollision(ballObj, hostPX, GH-24, hostCore, true);
+    if(!coreAlive(hostCore)){ status='finished'; winner='guest'; }
+  }
+  if(ballObj.y < 40){
+    paddleCoreCollision(ballObj, guestPX, 24, guestCore, true);
+    if(!coreAlive(guestCore)){ status='finished'; winner='host'; }
+  }
+  // clamp ball vertical just in case
+  ballObj.y = clamp(ballObj.y, -10, GH+10);
+  if(ballObj.y < -5 || ballObj.y > GH+5){
+    ball.x=GW/2; ball.y=GH/2; ball.vx=(Math.random()<0.5?-1:1)*140; ball.vy=(Math.random()<0.5?-1:1)*160;
+  } else {
+    ball = {x:ballObj.x,y:ballObj.y,vx:ballObj.vx,vy:ballObj.vy};
+  }
+
+  roomRef.child('state').update({
+    ball, hostCore, guestCore, status, winner, hostPaddleX:hostPX, hostPaddleY:hostPY, updatedAt: Date.now()
+  });
+  // keep local mirror fresh so drawVersus is smooth even before listener echoes back
+  versus.remoteState = {...st, ball, hostCore, guestCore, status, winner, hostPaddleX:hostPX, hostPaddleY:hostPY};
+}
+
+function drawVersus(){
+  drawBackground();
+  const st = versus.remoteState;
+  if(!st){ return; }
+  const hostCore = st.hostCore || makeCore();
+  const guestCore = st.guestCore || makeCore();
+  const hostPX = myRole==='host' ? versus.myPaddleX : (st.hostPaddleX ?? GW/2);
+  const hostPY = myRole==='host' ? versus.myPaddleY : (st.hostPaddleY ?? GH-70);
+  const guestPX = myRole==='guest' ? versus.myPaddleX : (st.guestPaddleX ?? GW/2);
+  const guestPY = myRole==='guest' ? versus.myPaddleY : (st.guestPaddleY ?? 70);
+
+  // orient so "my" side is always at bottom visually
+  ctx.save();
+  if(myRole==='guest'){
+    ctx.translate(GW,GH); ctx.rotate(Math.PI);
+  }
+  drawCore(GW/2, GH-24, hostCore, myRole==='host' ? '#5ee1c9' : '#ff5d7a');
+  drawCore(GW/2, 24, guestCore, myRole==='guest' ? '#5ee1c9' : '#ff5d7a');
+  drawPaddle(hostPX, hostPY, myRole==='host' ? '#e9edf5' : '#c9d0dd');
+  drawPaddle(guestPX, guestPY, myRole==='guest' ? '#e9edf5' : '#c9d0dd');
+  if(st.ball) drawBall({x:st.ball.x,y:st.ball.y,r:BALL_R});
+  ctx.restore();
+
+  // labels
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = '11px sans-serif'; ctx.textAlign='center';
+  const oppLabel = versus.opponentName || '相手';
+  ctx.fillText(myRole==='host' ? oppLabel : 'あなた', GW/2, GH-4);
+  ctx.fillText(myRole==='guest' ? oppLabel : 'あなた', GW/2, 14);
+
+  timerBox.textContent = fmtTime((Date.now()-versus.startedAt)/1000);
+}
+
+function finishVersus(status, winner){
+  if(versus.over) return;
+  versus.over = true;
+  cancelAnimationFrame(rafId);
+  let title, msg;
+  if(status==='opponent_left'){
+    title = '対戦相手が退出しました'; msg='勝利扱いになりません';
+  } else {
+    const iWon = winner===myRole;
+    title = iWon ? 'YOU WIN!' : 'YOU LOSE...';
+    msg = iWon ? '相手のコアを破壊した！' : 'コアを破壊された…';
+  }
+  showResult(title, msg, null);
+  cleanupVersus();
+}
+
+/* =========================================================
+   MAIN LOOP
+   ========================================================= */
+function loop(){
+  const now = performance.now();
+  let dt = (now-lastT)/1000;
+  dt = Math.min(dt, 0.05);
+  lastT = now;
+
+  if(mode==='single' && !single.over){
+    updateSingle(dt);
+    drawSingle();
+    rafId = requestAnimationFrame(loop);
+  } else if(mode==='versus' && !versus.over){
+    updateVersusLocal(dt);
+    drawVersus();
+    rafId = requestAnimationFrame(loop);
+  }
+}
+
+/* =========================================================
+   UI HELPERS
+   ========================================================= */
+function showGameUI(){
+  menuScreen.classList.add('hidden');
+  matchScreen.classList.add('hidden');
+  resultCard.classList.add('hidden');
+  hud.classList.remove('hidden');
+}
+function showMenu(){
+  cancelAnimationFrame(rafId);
+  mode=null;
+  hud.classList.add('hidden');
+  resultCard.classList.add('hidden');
+  matchScreen.classList.add('hidden');
+  menuScreen.classList.remove('hidden');
+  loadRanking();
+}
+function showResult(title, scoreText, onShown){
+  hud.classList.add('hidden');
+  document.getElementById('resultTitle').textContent = title;
+  document.getElementById('resultScore').textContent = scoreText;
+  document.getElementById('saveMsg').textContent='';
+  resultCard.classList.remove('hidden');
+  if(onShown) onShown();
+}
+document.getElementById('backToMenuBtn').addEventListener('click', ()=>{
+  cleanupVersus();
+  showMenu();
 });
-function backToMenu(){
-  cancelLoop(); Arena.cleanupNet();
-  hud.style.display="none"; joywrap.style.display="none";
-  mode="menu"; showOverlay("menu");
-  foot.textContent="ジョイスティックで自由に動いてボールを弾こう";
+document.getElementById('exitBtn').addEventListener('click', ()=>{
+  if(mode==='versus' && roomRef){
+    roomRef.update({status:'opponent_left'});
+    cleanupVersus();
+  }
+  cancelAnimationFrame(rafId);
+  showMenu();
+});
+
+function fmtTime(sec){
+  sec = Math.max(0,sec);
+  const m = Math.floor(sec/60), s = Math.floor(sec%60);
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
 }
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+
+/* =========================================================
+   RANKING
+   ========================================================= */
+function loadRanking(){
+  rankList.textContent = '読み込み中...';
+  db.ref('ranking').orderByChild('score').limitToLast(10).once('value').then(snap=>{
+    const rows = [];
+    snap.forEach(c=> rows.push(c.val()));
+    rows.reverse();
+    if(rows.length===0){ rankList.innerHTML = '<div style="color:var(--sub);font-size:12px;">まだ記録がありません</div>'; return; }
+    rankList.innerHTML = rows.map((r,i)=>`
+      <div class="rankRow"><span class="rk">${i+1}</span><span class="nm">${escapeHtml(r.name||'---')}</span><span class="sc">${fmtTime(r.score)}</span></div>
+    `).join('');
+  }).catch(()=>{ rankList.innerHTML = '<div style="color:var(--sub);font-size:12px;">読み込みに失敗しました</div>'; });
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function saveScore(score){
+  const name = (nameInput.value||'名無し').trim().slice(0,10);
+  db.ref('ranking').push({name, score, ts:Date.now()}).then(()=>{
+    document.getElementById('saveMsg').textContent = 'ランキングに記録しました！';
+  }).catch(()=>{
+    document.getElementById('saveMsg').textContent = '記録の送信に失敗しました';
+  });
+}
+
+/* =========================================================
+   MENU EVENTS
+   ========================================================= */
+document.getElementById('btnSingle').addEventListener('click', ()=>{
+  localStorage.setItem('cb_name', nameInput.value.trim()||nameInput.placeholder);
+  startSingle();
+});
+document.getElementById('btnVersus').addEventListener('click', ()=>{
+  localStorage.setItem('cb_name', nameInput.value.trim()||nameInput.placeholder);
+  startMatchmaking();
+});
+
+loadRanking();
 </script>
 </body>
 </html>
